@@ -1,0 +1,62 @@
+Sub SEND()
+    Dim OutApp As Object
+    Dim OutMail As Object
+    Dim cell As Range
+    Dim source_file As String
+    Dim inv_number As String
+    Dim Data As String
+    Dim strSignature As String
+    
+    
+
+    Application.ScreenUpdating = True
+    Set OutApp = CreateObject("Outlook.Application") 'this creates an outlook email object
+    
+    
+    On Error GoTo cleanup
+    For Each cell In Columns("G").Cells.SpecialCells(xlCellTypeConstants) 'if a cell in column G has @, it means it's an email address
+        If cell.Value Like "?*@?*.?*" And _
+           UCase(Cells(cell.Row, "V").Value) = "YES" Then 'for cells in column V, if you select "yes", the code will execute the procedure
+
+            Set OutMail = OutApp.CreateItem(0)
+            On Error Resume Next
+            
+            source_file = "%%%%%" & Cells(cell.Row, "A") & ".pdf" 'this is where the 	files are pulled from
+            inv_number = Cells(cell.Row, "M") 'invoice number
+            supplier = Cells(cell.Row, "N") 'supplier
+            strSignature = OutMail.Body
+            
+            
+            With OutMail 'below are contents of the email
+                .BodyFormat = 2
+                .To = cell.Value
+                .Subject = "Invoice from " & supplier & " for payment" & " - " & Date
+                .Display 'you can change it so that the email is sent directly
+                .HTMLBody = "<p style='font-family:Calibri;font-size:13'>" & "Hello, " & "</p>" & "<br>" & _
+                            "Please see attached an invoice from " & supplier & " for payment." & _
+                            "<br>" & "<br>" & "Invoice Number: " & inv_number & _
+                            "<br>" & "<br>" & "Note that the fund company name and respective PO number are present on the invoice." & _
+                            "<br>" & "<br>" & "Don't hesitate to let us know should you require additional details or in case of any issue." & _
+                            "<br>" & "<br>" & "Kind regards," & _
+                            "<br>" & "<br>" & Signature & .HTMLBody
+                Set .SendUsingAccount = OutMail.Session.Accounts.Item(3)
+                .Attachments.Add source_file
+                .CC = "xxx@yyy.com;" & "xxx@yyy.com;" & "xxx@yyy.com"
+             
+            End With
+            On Error GoTo 0
+            Set OutMail = Nothing
+        End If
+    Next cell
+  
+  'after the code runs, replace "yes" with a blank
+  
+   Columns("V").Select
+    Selection.Replace What:="Yes", Replacement:="", LookAt:=xlPart, _
+    SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, _
+    ReplaceFormat:=False
+    
+cleanup:
+    Set OutApp = Nothing
+    Application.ScreenUpdating = True
+End Sub
